@@ -1,6 +1,8 @@
 import { Client } from 'discord.js';
 import config from './config';
 
+import * as api from './api';
+
 const client = new Client();
 
 client.on('message', (msg) => {
@@ -13,6 +15,15 @@ client.on('message', (msg) => {
   /* Routing */
   if (request === 'ping' && client.ws.ping) {
     msg.channel.send(`Pong! ${Math.floor(client.ws.ping)}ms`);
+  }
+  if (request === 'q') {
+    api.SummonerSearch.makeEmbedMessage()
+      .then((embedMsg) => {
+        msg.channel.send(embedMsg);
+      })
+      .catch(() => {
+        msg.channel.send('error');
+      });
   }
 });
 
