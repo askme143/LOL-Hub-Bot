@@ -15,7 +15,7 @@ Node.js의 module, [Discord.js](https://discord.js.org/)를 사용했습니다.
    - 최근 솔로랭크 20판의 승률 및 KDA
    - 전적검색 예시
 
-     ![hide_on_bush_search](/image/example/hide_on_bush.PNG)
+     ![hide_on_bush_search](/public/readme/example1.PNG)
 
 ## 명령어/사용법
 
@@ -30,6 +30,8 @@ q를 앞에 붙이고 명령어를 입력해주세요. (ex. qping, qq hide on bu
   ```
   예시: qq hide on bush
   ```
+
+  ![hide_on_bush_search](/public/readme/example1.PNG)
 
 - ping
 

@@ -5,6 +5,12 @@ import * as SummonerSearch from './services/summoner-search';
 
 const client = new Client();
 
+client.on('ready', () => {
+  if (client.user) {
+    client.user.setAvatar('./public/profile.PNG');
+  }
+});
+
 client.on('message', (msg) => {
   /* Message prefix */
   if (msg.content[0] !== 'q') return;
