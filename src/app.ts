@@ -1,7 +1,7 @@
 import { Client } from 'discord.js';
 import config from './config';
 
-import * as api from './api';
+import * as SummonerSearch from './services/summoner-search';
 
 const client = new Client();
 
@@ -17,11 +17,14 @@ client.on('message', (msg) => {
     msg.channel.send(`Pong! ${Math.floor(client.ws.ping)}ms`);
   }
   if (request === 'q') {
-    api.SummonerSearch.makeEmbedMessage()
+    const arg = msg.content.substr(3).trim();
+
+    SummonerSearch.makeEmbedMessage(arg)
       .then((embedMsg) => {
         msg.channel.send(embedMsg);
       })
-      .catch(() => {
+      .catch((error) => {
+        console.log(error);
         msg.channel.send('error');
       });
   }

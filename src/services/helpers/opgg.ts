@@ -1,13 +1,29 @@
 import axios from 'axios';
 import cheerio from 'cheerio';
 
-interface SummonerInfo {
+export interface SummonerInfo {
+  name: string;
   summonerID: string;
   season: string;
   soloTier: string;
   flexTier: string;
   soloLP: number;
   flexLP: number;
+  soloWinRatio: number;
+  flexWinRatio: number;
+}
+
+export interface MostChamp {
+  champName: string;
+  winRatio: number;
+  totalGame: number;
+  kda: number;
+}
+
+export interface RecentSolo {
+  wins: number;
+  losses: number;
+  kda: number;
 }
 
 const requestHeader = {
@@ -20,26 +36,131 @@ const requestHeader = {
   },
 };
 
-async function getSummonerInfo(name: string): Promise<SummonerInfo> {
+async function getSummonerInfo(nameInput: string) {
   const response = await axios.get(
-    `https://www.op.gg/summoner/${encodeURI(name)}`,
+    `https://www.op.gg/summoner/${encodeURI(nameInput)}`,
     requestHeader
   );
 
   const data = cheerio.load(response.data);
+  /* Non-existing summoner */
+  /* Or other errors on op.gg */
+  if (data('div.l-container > div.SummonerNotFoundLayout').length > 0)
+    return null;
+  else if (data('div.Profile > div.Information > span').length === 0)
+    throw Error('op.gg failed');
+
+  const name = data('div.Profile > div.Information > span').text();
+  const summonerID = data('div.MostChampionContent > div').attr()[
+    'data-summoner-id'
+  ];
+  const season = data('div.MostChampionContent > div').attr()['data-season'];
+  const soloTier = data('div.TierRank').text().trim();
+  const flexTier = data('div.sub-tier__rank-tier').text().trim();
+  let soloLP = parseInt(
+    data('span.LeaguePoints')
+      .text()
+      .replace(/[^(0-9)]/g, '')
+  );
+  let flexLP = parseInt(
+    data('div.sub-tier__league-point')
+      .text()
+      .replace(/[^(0-9)]/g, '')
+  );
+  let soloWinRatio = parseInt(
+    data('span.winratio')
+      .text()
+      .replace(/[^(0-9)]/g, '')
+  );
+  let flexWinRatio = parseInt(
+    data('div.sub-tier__gray-text')
+      .text()
+      .replace(/[^(0-9)]/g, '')
+  );
+
+  if (Number.isNaN(soloLP)) soloLP = 0;
+  if (Number.isNaN(flexLP)) flexLP = 0;
+  if (Number.isNaN(soloWinRatio)) soloWinRatio = 0;
+  if (Number.isNaN(flexWinRatio)) flexWinRatio = 0;
 
   return {
-    summonerID: data('div.MostChampionContent > div').attr()[
-      'data-summoner-id'
-    ],
-    season: data('div.MostChampionContent > div').attr()['data-season'],
-
-    soloTier: data('div.TierRank').text().trim(),
-    flexTier: data('div.sub-tier__rank-tier').text().trim(),
-
-    soloLP: parseInt(data('span.LeaguePoints').text().split(' ')[0]),
-    flexLP: parseInt(data('div.sub-tier__league-point').text().split('LP')[0]),
-  };
+    name,
+    summonerID,
+    season,
+    soloTier,
+    flexTier,
+    soloLP,
+    flexLP,
+    soloWinRatio,
+    flexWinRatio,
+  } as SummonerInfo;
 }
 
-export { getSummonerInfo };
+function getTierMedalSrc(tier: string) {
+  let url = 'https://opgg-static.akamaized.net/images/medals/';
+
+  if (tier.toLowerCase().trim() === 'unranked') tier = 'default';
+
+  url += tier.replace(' ', '_').toLowerCase();
+  if (!url.includes('_')) url += '_1';
+  url += '.png?image=q_auto&v=1';
+
+  return url;
+}
+
+async function getMostChamps(summonerID: string, season: string) {
+  const response = await axios.get(
+    `https://www.op.gg/summoner/champions/ajax/champions.most/summonerId=${summonerID}&season=${season}`,
+    requestHeader
+  );
+
+  const data = cheerio.load(response.data);
+  const mostChamps: MostChamp[] = [];
+
+  for (let i = 1; i < 4; i++) {
+    const champName = data(`div.ChampionBox:nth-child(${i}) div.Face`).attr(
+      'title'
+    );
+    if (champName === undefined) break;
+
+    const winRatio = parseInt(
+      data(`div.ChampionBox:nth-child(${i}) div.WinRatio`)
+        .text()
+        .replace(/[^(0-9)]/g, '')
+    );
+    const totalGame = parseInt(
+      data(`div.ChampionBox:nth-child(${i}) div.Title`)
+        .text()
+        .replace(/[^(0-9)]/g, '')
+    );
+    const kda = parseFloat(
+      data(`div.ChampionBox:nth-child(${i}) span.KDA`).text().split(':')[0]
+    );
+
+    mostChamps.push({ champName, winRatio, totalGame, kda });
+  }
+
+  return mostChamps;
+}
+
+async function getRecentSolo(summonerID: string) {
+  const response = await axios(
+    `https://www.op.gg/summoner/matches/ajax/averageAndList/startInfo=0&summonerId=${summonerID}&type=soloranked`,
+    requestHeader
+  );
+
+  const data = cheerio.load(response.data.html);
+
+  const wins = parseInt(data('span.win').first().text());
+  const losses = parseInt(data('span.lose').first().text());
+  const kda = parseFloat(data('td.KDA  span.KDARatio').text().split(':')[0]);
+
+  return { wins, losses, kda } as RecentSolo;
+}
+
+export default {
+  getSummonerInfo,
+  getTierMedalSrc,
+  getMostChamps,
+  getRecentSolo,
+};
