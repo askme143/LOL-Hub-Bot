@@ -62,6 +62,7 @@ async function getSummonerInfo(nameInput: string) {
   let flexLP = parseInt(
     data('div.sub-tier__league-point')
       .text()
+      .split('/')[0]
       .replace(/[^(0-9)]/g, '')
   );
   let soloWinRatio = parseInt(
