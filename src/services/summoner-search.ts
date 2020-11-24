@@ -51,7 +51,9 @@ function makeMostChampFields(mostChamps: MostChamp[]) {
 function makeRecentSoloFields(recentSolo: RecentSolo) {
   const { wins, losses, kda } = recentSolo;
   const total = wins + losses;
-  const winRatio = Math.round((100 * wins) / total);
+  let winRatio = Math.round((100 * wins) / total);
+
+  if (Number.isNaN(winRatio)) winRatio = 0;
 
   return [
     {

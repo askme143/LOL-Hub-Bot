@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios';
 import { Client } from 'discord.js';
 import config from './config';
 
@@ -42,7 +43,11 @@ client.on('message', (msg) => {
         msg.channel.send(embedMsg);
       })
       .catch((error) => {
-        console.log(error);
+        if ((error as AxiosError).isAxiosError) {
+          const axiosError: AxiosError = error;
+          console.log(axiosError.request);
+        }
+        console.log(error.message);
         msg.channel.send('error');
       });
   }

@@ -27,18 +27,16 @@ export interface RecentSolo {
 }
 
 const requestHeader = {
-  headers: {
-    'User-Agent':
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Whale/2.8.107.16 Safari/537.36',
-    'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-    'Accept-Charset': 'application/x-www-form-urlencoded; charset=UTF-8',
-  },
+  'User-Agent':
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Whale/2.8.107.16 Safari/537.36',
+  'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+  'Accept-Charset': 'application/x-www-form-urlencoded; charset=UTF-8',
 };
 
 async function getSummonerInfo(nameInput: string) {
   const response = await axios.get(
     `https://www.op.gg/summoner/${encodeURI(nameInput)}`,
-    requestHeader
+    { headers: requestHeader }
   );
 
   const data = cheerio.load(response.data);
@@ -110,7 +108,7 @@ function getTierMedalSrc(tier: string) {
 async function getMostChamps(summonerID: string, season: string) {
   const response = await axios.get(
     `https://www.op.gg/summoner/champions/ajax/champions.most/summonerId=${summonerID}&season=${season}`,
-    requestHeader
+    { headers: requestHeader }
   );
 
   const data = cheerio.load(response.data);
@@ -145,8 +143,17 @@ async function getMostChamps(summonerID: string, season: string) {
 async function getRecentSolo(summonerID: string) {
   const response = await axios(
     `https://www.op.gg/summoner/matches/ajax/averageAndList/startInfo=0&summonerId=${summonerID}&type=soloranked`,
-    requestHeader
+    {
+      validateStatus: function (status) {
+        return status === 200 || status === 418;
+      },
+      headers: requestHeader,
+    }
   );
+
+  /* Doesn't have recent solo ranked game */
+  if (response.status === 418)
+    return { wins: 0, losses: 0, kda: 0 } as RecentSolo;
 
   const data = cheerio.load(response.data.html);
 
