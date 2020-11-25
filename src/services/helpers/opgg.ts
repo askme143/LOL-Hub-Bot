@@ -17,13 +17,13 @@ export interface MostChamp {
   champName: string;
   winRatio: number;
   totalGame: number;
-  kda: number;
+  kda: number | string;
 }
 
 export interface RecentSolo {
   wins: number;
   losses: number;
-  kda: number;
+  kda: number | string;
 }
 
 const requestHeader = {
@@ -131,9 +131,11 @@ async function getMostChamps(summonerID: string, season: string) {
         .text()
         .replace(/[^(0-9)]/g, '')
     );
-    const kda = parseFloat(
+    let kda: number | string = parseFloat(
       data(`div.ChampionBox:nth-child(${i}) span.KDA`).text().split(':')[0]
     );
+
+    if (Number.isNaN(kda)) kda = 'Perfect 평점';
 
     mostChamps.push({ champName, winRatio, totalGame, kda });
   }
@@ -160,7 +162,11 @@ async function getRecentSolo(summonerID: string) {
 
   const wins = parseInt(data('span.win').first().text());
   const losses = parseInt(data('span.lose').first().text());
-  const kda = parseFloat(data('td.KDA  span.KDARatio').text().split(':')[0]);
+  let kda: number | string = parseFloat(
+    data('td.KDA  span.KDARatio').text().split(':')[0]
+  );
+
+  if (Number.isNaN(kda)) kda = 'Perfect 평점';
 
   return { wins, losses, kda } as RecentSolo;
 }

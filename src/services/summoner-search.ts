@@ -38,7 +38,7 @@ function makeMostChampFields(mostChamps: MostChamp[]) {
       value:
         `<${champName}>` +
         `\n${winRatio}% (${totalGame} 게임)` +
-        `\n${kda.toFixed(2)}:1`,
+        `\n${typeof kda === 'number' ? kda.toFixed(2) + ' : 1' : kda}`,
       inline: true,
     });
   }
@@ -60,7 +60,7 @@ function makeRecentSoloFields(recentSolo: RecentSolo) {
       name: '\u200b\n최근 솔랭 전적',
       value:
         `${total}전 ${wins}승 ${losses}패 (${winRatio}%)` +
-        `\n${kda.toFixed(2)}:1`,
+        `\n${typeof kda === 'number' ? kda.toFixed(2) + ' : 1' : kda}`,
     },
   ];
 }
